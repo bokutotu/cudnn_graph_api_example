@@ -1,5 +1,0 @@
-/home/bokutotu/HDD/CUDA/code/b/CMakeFiles/utils.dir
-/home/bokutotu/HDD/CUDA/code/b/CMakeFiles/graph_api_conv_2d.dir
-/home/bokutotu/HDD/CUDA/code/b/CMakeFiles/graph_api_batch_norm_2d.dir
-/home/bokutotu/HDD/CUDA/code/b/CMakeFiles/edit_cache.dir
-/home/bokutotu/HDD/CUDA/code/b/CMakeFiles/rebuild_cache.dir
