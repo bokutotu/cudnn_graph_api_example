@@ -1,0 +1,1 @@
+/usr/bin/cc CMakeFiles/graph_api_batch_norm_2d.dir/graph_api_batch_norm_2d.c.o -o graph_api_batch_norm_2d  libutils.a /usr/local/cuda/lib64/libcudart_static.a -ldl /usr/lib/x86_64-linux-gnu/librt.a /usr/lib/x86_64-linux-gnu/libcudnn.so 
