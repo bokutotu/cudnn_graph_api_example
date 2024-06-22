@@ -15,5 +15,11 @@ endif()
 include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
 add_library(utils STATIC utils.c)
 add_executable(graph_api_conv_2d graph_api_conv_2d.c)
-target_link_libraries(graph_api_conv_2 PRIVATE utils)
-target_link_libraries(graph_api_conv_2 PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+target_link_libraries(graph_api_conv_2d PRIVATE utils)
+target_link_libraries(graph_api_conv_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+# graph_api_batch_norm_2d.c
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(graph_api_batch_norm_2d graph_api_batch_norm_2d.c)
+target_link_libraries(graph_api_batch_norm_2d PRIVATE utils)
+target_link_libraries(graph_api_batch_norm_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})

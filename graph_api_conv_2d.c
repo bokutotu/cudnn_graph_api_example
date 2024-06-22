@@ -177,7 +177,8 @@ int main() {
 
   int64_t wDim[4] = {k, c, kh, kw};
   int64_t wStride[4] = {c*kh*kw, kh*kw, kw, 1};
-  cudnnBackendDescriptor_t wDesc = tensorDescriptorCreate(4, wDim, wStride, 4, CUDNN_DATA_FLOAT, 'w');
+  // cudnnBackendDescriptor_t wDesc = tensorDescriptorCreate(4, wDim, wStride, 4, CUDNN_DATA_FLOAT, 'w');
+  cudnnBackendDescriptor_t wDesc = tensorDescriptorCreate(4, wDim, wStride, 4, CUDNN_DATA_FLOAT, 'x');
 
   printf("wDesc: created\n");
 
