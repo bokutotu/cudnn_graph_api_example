@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(MyProject CUDA C CXX)
+
+# -Wall -Wextra -Werror
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Werror")
+
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
@@ -12,14 +16,21 @@ if (CUDNN_INCLUDE_DIR AND CUDNN_LIBRARY)
 else()
     message(FATAL_ERROR "Could not find cuDNN")
 endif()
-include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
-add_library(utils STATIC utils.c)
-add_executable(graph_api_conv_2d graph_api_conv_2d.c)
-target_link_libraries(graph_api_conv_2d PRIVATE utils)
-target_link_libraries(graph_api_conv_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
 
-# graph_api_batch_norm_2d.c
 include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
-add_executable(graph_api_batch_norm_2d graph_api_batch_norm_2d.c)
-target_link_libraries(graph_api_batch_norm_2d PRIVATE utils)
-target_link_libraries(graph_api_batch_norm_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+add_library(utils STATIC utils.cpp)
+
+# add_executable(graph_api_conv_2d graph_api_conv_2d.c)
+# target_link_libraries(graph_api_conv_2d PRIVATE utils)
+# target_link_libraries(graph_api_conv_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+#
+# # graph_api_batch_norm_2d.c
+# include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+# add_executable(graph_api_batch_norm_2d graph_api_batch_norm_2d.c)
+# target_link_libraries(graph_api_batch_norm_2d PRIVATE utils)
+# target_link_libraries(graph_api_batch_norm_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(batch_norm batch_norm.cpp)
+target_link_libraries(batch_norm PRIVATE utils)
+target_link_libraries(batch_norm PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})

@@ -1,8 +1,13 @@
 #pragma once
 
+#include <string>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdio.h>
+
 
 #include <cudnn.h>
 #include <cudnn_graph.h>
@@ -32,7 +37,7 @@ cudnnBackendDescriptor_t tensorDescriptorCreate(int64_t numDim,
                                                 int64_t *stride, 
                                                 int64_t byteAlignment, 
                                                 cudnnDataType_t dataType, 
-                                                int64_t name);
+                                                std::string name);
 
 #ifdef __cplusplus
 }

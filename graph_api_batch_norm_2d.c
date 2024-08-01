@@ -11,7 +11,9 @@ cudnnBackendDescriptor_t normalizationDescriptorCreate(cudnnBackendNormMode_t mo
                                                        cudnnBackendDescriptor_t xDesc,
                                                        cudnnBackendDescriptor_t yDesc,
                                                        cudnnBackendDescriptor_t runningMeanDesc,
+                                                       cudnnBackendDescriptor_t runningMeanDescNext,
                                                        cudnnBackendDescriptor_t runningVarianceDesc,
+                                                       cudnnBackendDescriptor_t runningVarianceDescNext,
                                                        cudnnBackendDescriptor_t saveMeanDesc,
                                                        cudnnBackendDescriptor_t saveInvVarianceDesc,
                                                        cudnnBackendDescriptor_t scaleDesc,
@@ -49,10 +51,10 @@ cudnnBackendDescriptor_t normalizationDescriptorCreate(cudnnBackendNormMode_t mo
                                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &runningVarianceDesc));
 
   CHECK_CUDNN(cudnnBackendSetAttribute(normDesc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_MEAN_DESC,
-                                       CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &runningMeanDesc));
+                                       CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &runningMeanDescNext));
 
   CHECK_CUDNN(cudnnBackendSetAttribute(normDesc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_VAR_DESC,
-                                       CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &runningVarianceDesc));
+                                       CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &runningVarianceDescNext));
 
   CHECK_CUDNN(cudnnBackendSetAttribute(normDesc, CUDNN_ATTR_OPERATION_NORM_FWD_YDESC,
                                        CUDNN_TYPE_BACKEND_DESCRIPTOR, 1, &yDesc));
@@ -132,62 +134,87 @@ int main() {
   int64_t h = 5;
   int64_t w = 5;
 
+  char* xName = "X";
   cudnnBackendDescriptor_t xDesc = tensorDescriptorCreate(4, 
                                                           (int64_t[]){n, c, h, w}, 
                                                           (int64_t[]){c*h*w, h*w, w, 1}, 
                                                           4, 
                                                           CUDNN_DATA_FLOAT, 
-                                                          'x');
+                                                          *xName);
 
+  char* yName = "Y";
   cudnnBackendDescriptor_t yDesc = tensorDescriptorCreate(4, 
                                                           (int64_t[]){n, c, h, w}, 
                                                           (int64_t[]){c*h*w, h*w, w, 1}, 
                                                           4, 
                                                           CUDNN_DATA_FLOAT, 
-                                                          'y');
+                                                          *yName);
 
+  char* runningMeanName = "runningMean";
   cudnnBackendDescriptor_t runningMeanDesc = tensorDescriptorCreate(4, 
                                                                     (int64_t[]){1, c, 1, 1}, 
                                                                     (int64_t[]){c, 1, c, c}, 
                                                                     4, 
                                                                     CUDNN_DATA_FLOAT, 
-                                                                    0);
+                                                                    *runningMeanName);
 
+  char* runningVarianceName = "runningVariance";
   cudnnBackendDescriptor_t runningVarianceDesc = tensorDescriptorCreate(4, 
                                                                         (int64_t[]){1, c, 1, 1}, 
                                                                         (int64_t[]){c, 1, c, c}, 
                                                                         4, 
                                                                         CUDNN_DATA_FLOAT, 
-                                                                        1);
+                                                                        *runningVarianceName);
 
+  char* runningMeanNextName = "runningMeanNext";
+  cudnnBackendDescriptor_t runningMeanNextDesc = tensorDescriptorCreate(4, 
+                                                                    (int64_t[]){1, c, 1, 1}, 
+                                                                    (int64_t[]){c, 1, c, c}, 
+                                                                    4, 
+                                                                    CUDNN_DATA_FLOAT, 
+                                                                    *runningMeanName);
+
+  char* runningVarianceNextName = "runningVariance";
+  cudnnBackendDescriptor_t runningVarianceNextDesc = tensorDescriptorCreate(4, 
+                                                                        (int64_t[]){1, c, 1, 1}, 
+                                                                        (int64_t[]){c, 1, c, c}, 
+                                                                        4, 
+                                                                        CUDNN_DATA_FLOAT, 
+                                                                        *runningVarianceName);
+
+  char* scaleName = "scale";
   cudnnBackendDescriptor_t scaleDesc = tensorDescriptorCreate(4, 
                                                               (int64_t[]){1, c, 1, 1}, 
                                                               (int64_t[]){c, 1, c, c}, 
                                                               4, 
                                                               CUDNN_DATA_FLOAT, 
-                                                              2);
+                                                              *scaleName);
 
+  char* biasName = "bias";
   cudnnBackendDescriptor_t biasDesc = tensorDescriptorCreate(4, 
                                                             (int64_t[]){1, c, 1, 1}, 
                                                             (int64_t[]){c, 1, c, c}, 
                                                             4, 
                                                             CUDNN_DATA_FLOAT, 
-                                                            3);
+                                                            *biasName);
 
+  char* epsilonName = "epsilonDesc";
   cudnnBackendDescriptor_t epsilonDesc = tensorDescriptorCreate(4, 
                                                                 (int64_t[]){1, 1, 1, 1}, 
                                                                 (int64_t[]){1, 1, 1, 1}, 
                                                                 4, 
                                                                 CUDNN_DATA_FLOAT, 
-                                                                4);
+                                                                *epsilonName);
 
+  char* momentumName = "momentum";
   cudnnBackendDescriptor_t momentumDesc = tensorDescriptorCreate(4, 
                                                                 (int64_t[]){1, 1, 1, 1}, 
                                                                 (int64_t[]){1, 1, 1, 1}, 
                                                                 4, 
                                                                 CUDNN_DATA_FLOAT, 
-                                                                5);
+                                                                *momentumName);
 
+  char* savingMeanName = "savingMean";
   cudnnBackendDescriptor_t savingMeanDesc = tensorDescriptorCreate(4, 
                                                                     (int64_t[]){1, c, 1, 1}, 
                                                                     (int64_t[]){c, 1, c, c}, 
@@ -195,19 +222,22 @@ int main() {
                                                                     CUDNN_DATA_FLOAT, 
                                                                     6);
 
+  char* savingInvVarName = "savingInvVar";
   cudnnBackendDescriptor_t savingInvVarDesc = tensorDescriptorCreate(4, 
                                                                         (int64_t[]){1, c, 1, 1}, 
                                                                         (int64_t[]){c, 1, c, c}, 
                                                                         4, 
                                                                         CUDNN_DATA_FLOAT, 
-                                                                        7);
+                                                                        *savingInvVarName);
 
-  cudnnBackendDescriptor_t normDesc = normalizationDescriptorCreate(CUDNN_BATCH_NORM, 
-                                                                    CUDNN_NORM_FWD_INFERENCE,
+  cudnnBackendDescriptor_t normDesc = normalizationDescriptorCreate(CUDNN_LAYER_NORM, 
+                                                                    CUDNN_NORM_FWD_TRAINING,
                                                                     xDesc, 
                                                                     yDesc, 
                                                                     runningMeanDesc, 
+                                                                    runningMeanNextDesc, 
                                                                     runningVarianceDesc, 
+                                                                    runningVarianceNextDesc, 
                                                                     savingMeanDesc, 
                                                                     savingInvVarDesc, 
                                                                     scaleDesc, 
