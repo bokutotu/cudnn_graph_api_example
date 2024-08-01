@@ -141,6 +141,7 @@ int main() {
   norm_config.register_graph();
 
   finalize_graph(graph);
+
   cudnnBackendDescriptor_t engine = create_engine_by_graph(graph);
 
   struct EngineConfig config = engineConfigDescriptorCreate(engine);

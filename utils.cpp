@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 #include <cudnn.h>
-#include <cudnn_graph.h>
+// #include <cudnn_graph.h>
 #include <string>
 
 #include "utils.h"
