@@ -7,14 +7,14 @@
 
 #include <cudnn.h>
 
-cudnnBackendDescriptor_t init_graph(cudnnHandle_t cudnn) {
+cudnnBackendDescriptor_t init_graph() {
   cudnnBackendDescriptor_t graph;
   CHECK_CUDNN(cudnnBackendCreateDescriptor(CUDNN_BACKEND_OPERATIONGRAPH_DESCRIPTOR, &graph));
-  CHECK_CUDNN(cudnnBackendSetAttribute(graph, CUDNN_ATTR_OPERATIONGRAPH_HANDLE, CUDNN_TYPE_HANDLE, 1, &cudnn));
   return graph;
 }
 
-void finalize_graph(cudnnBackendDescriptor_t graph) {
+void finalize_graph(cudnnBackendDescriptor_t graph, cudnnHandle_t cudnn) {
+  CHECK_CUDNN(cudnnBackendSetAttribute(graph, CUDNN_ATTR_OPERATIONGRAPH_HANDLE, CUDNN_TYPE_HANDLE, 1, &cudnn));
   CHECK_CUDNN(cudnnBackendFinalize(graph));
 }
 
@@ -49,7 +49,7 @@ struct EngineConfig engineConfigDescriptorCreate(cudnnBackendDescriptor_t engine
   return config;
 }
 
-class NormConfig {
+class LayerNormConfig {
 private:
   cudnnHandle_t cudnn;
 
@@ -79,13 +79,12 @@ private:
   }
 
 public:
-  NormConfig(cudnnHandle_t cudnn_, cudnnBackendDescriptor_t graph) : cudnn(cudnn_), op_graph(graph) {}
+  LayerNormConfig(cudnnHandle_t cudnn_, cudnnBackendDescriptor_t graph) : cudnn(cudnn_), op_graph(graph) {}
 
   void CreateNormDesc(
     int64_t batch_size,
-    int64_t channels,
-    int64_t height,
-    int64_t width,
+    int64_t seq_length,
+    int64_t hidden_size,
     cudnnBackendNormMode_t mode,
     cudnnBackendNormFwdPhase_t phase
   ) {
@@ -93,11 +92,11 @@ public:
     setAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_MODE, CUDNN_TYPE_NORM_MODE, 1, &mode);
     setAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_PHASE, CUDNN_TYPE_NORM_FWD_PHASE, 1, &phase);
 
-    int64_t dims[4] = {batch_size, channels, height, width};
-    int64_t strides[4] = {channels * height * width, height * width, width, 1};
+    int64_t dims[4] = {batch_size * seq_length, hidden_size, 1, 1};
+    int64_t strides[4] = {hidden_size, 1, hidden_size, hidden_size};
     int64_t scalar[4] = {1, 1, 1, 1};
-    int64_t dim2d[4] = {1, channels, 1, 1};
-    int64_t dim2d_stride[4] = {channels, 1, channels, channels};
+    int64_t dim2d[4] = {1, hidden_size, 1, 1};
+    int64_t dim2d_stride[4] = {hidden_size, 1, hidden_size, hidden_size};
 
     this->x_desc = tensorDescriptorCreate(4, dims, strides, 4, CUDNN_DATA_FLOAT, std::string("x"));
     this->y_desc = tensorDescriptorCreate(4, dims, strides, 4, CUDNN_DATA_FLOAT, std::string("y"));
@@ -106,10 +105,10 @@ public:
     this->scale_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("scale"));
     this->bias_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("bias"));
     this->epsilon_desc = tensorDescriptorCreate(4, scalar, scalar, 4, CUDNN_DATA_FLOAT, std::string("epsilon"));
-    this->input_running_mean_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("input_running_mean"));
-    this->input_running_var_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("input_running_var"));
-    this->output_running_mean_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("output_running_mean"));
-    this->output_running_var_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("output_running_var"));
+    // this->input_running_mean_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("input_running_mean"));
+    // this->input_running_var_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("input_running_var"));
+    // this->output_running_mean_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("output_running_mean"));
+    // this->output_running_var_desc = tensorDescriptorCreate(4, dim2d, dim2d_stride, 4, CUDNN_DATA_FLOAT, std::string("output_running_var"));
 
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_XDESC, this->x_desc);
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_MEAN_DESC, this->mean_desc);
@@ -117,10 +116,10 @@ public:
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_SCALE_DESC, this->scale_desc);
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_BIAS_DESC, this->bias_desc);
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_EPSILON_DESC, this->epsilon_desc);
-    setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_INPUT_RUNNING_MEAN_DESC, this->input_running_mean_desc);
-    setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_INPUT_RUNNING_VAR_DESC, this->input_running_var_desc);
-    setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_MEAN_DESC, this->output_running_mean_desc);
-    setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_VAR_DESC, this->output_running_var_desc);
+    // setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_INPUT_RUNNING_MEAN_DESC, this->input_running_mean_desc);
+    // setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_INPUT_RUNNING_VAR_DESC, this->input_running_var_desc);
+    // setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_MEAN_DESC, this->output_running_mean_desc);
+    // setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_OUTPUT_RUNNING_VAR_DESC, this->output_running_var_desc);
     setTensorAttribute(this->norm_desc, CUDNN_ATTR_OPERATION_NORM_FWD_YDESC, this->y_desc);
 
     CHECK_CUDNN(cudnnBackendFinalize(this->norm_desc));
@@ -134,13 +133,13 @@ public:
 int main() {
   cudnnHandle_t cudnn;
   CHECK_CUDNN(cudnnCreate(&cudnn));
-  cudnnBackendDescriptor_t graph = init_graph(cudnn);
+  cudnnBackendDescriptor_t graph = init_graph();
 
-  NormConfig norm_config = NormConfig(cudnn, graph);
-  norm_config.CreateNormDesc(4, 3, 224, 224, CUDNN_LAYER_NORM, CUDNN_NORM_FWD_TRAINING);
+  LayerNormConfig norm_config = LayerNormConfig(cudnn, graph);
+  norm_config.CreateNormDesc(4, 1024, 128, CUDNN_LAYER_NORM, CUDNN_NORM_FWD_TRAINING);
   norm_config.register_graph();
 
-  finalize_graph(graph);
+  finalize_graph(graph, cudnn);
 
   cudnnBackendDescriptor_t engine = create_engine_by_graph(graph);
 

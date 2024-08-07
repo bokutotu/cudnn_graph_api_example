@@ -34,3 +34,18 @@ include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
 add_executable(batch_norm batch_norm.cpp)
 target_link_libraries(batch_norm PRIVATE utils)
 target_link_libraries(batch_norm PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(layer_norm layer_norm.cpp)
+target_link_libraries(layer_norm PRIVATE utils)
+target_link_libraries(layer_norm PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(dropout_4d dropout_4d.c)
+target_link_libraries(dropout_4d PRIVATE utils)
+target_link_libraries(dropout_4d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(dropout_2d dropout_2d.c)
+target_link_libraries(dropout_2d PRIVATE utils)
+target_link_libraries(dropout_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
