@@ -49,3 +49,8 @@ include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
 add_executable(dropout_2d dropout_2d.c)
 target_link_libraries(dropout_2d PRIVATE utils)
 target_link_libraries(dropout_2d PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
+
+include_directories(${CUDA_INCLUDE_DIRS} ${CUDNN_INCLUDE_DIR})
+add_executable(rnn rnn.cu)
+target_link_libraries(rnn PRIVATE utils)
+target_link_libraries(rnn PRIVATE ${CUDA_LIBRARIES} ${CUDNN_LIBRARY})
